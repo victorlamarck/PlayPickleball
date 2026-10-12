@@ -1,0 +1,1 @@
+"""Pickleball Live Scores API."""

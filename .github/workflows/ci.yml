@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      ENV: test
+      DATABASE_URL: postgresql+asyncpg://scores:scores@localhost:5432/scores
+      TEST_DATABASE_URL: postgresql+asyncpg://scores:scores@localhost:5432/scores_test
+      FIRESTORE_EMULATOR_HOST: localhost:8081
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: make lint
+
+      # Same compose file as local development: Postgres + Firestore emulator.
+      - name: Start Postgres and Firestore emulator
+        run: make up
+
+      - name: Migrate
+        run: make migrate
+
+      - name: Test
+        run: make test
+
+      - name: Service logs on failure
+        if: failure()
+        run: docker compose logs --tail=200
