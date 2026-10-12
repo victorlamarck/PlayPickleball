@@ -32,6 +32,7 @@ lint: ## Lint, check formatting and type-check
 	uv run ruff check .
 	uv run ruff format --check .
 	uv run mypy
+	uv run mypy scripts
 
 fmt: ## Auto-fix lint issues and format
 	uv run ruff check --fix .

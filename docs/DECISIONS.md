@@ -142,3 +142,36 @@ abre uma exceção à regra 1 do SPEC. Código, comentários, commits e o README
 | 4.26 | Teste de ponta a ponta manual (não automatizado): a API com o emulador inacessível → `failed=4, remaining=4`, e depois o `python -m app.outbox` → `published=4`, com os documentos no Firestore | Confirma o fluxo de falha + retry com processos reais, que é exatamente o cenário de produção do SPEC 3 (passo 5). |
 | 4.27 | `.env` criado localmente a partir do `.env.example` (ele está no `.gitignore`) | Sem ele, `FIRESTORE_EMULATOR_HOST` não fica definido no dev, e o client tentaria o Firestore real. O README da Fase 5 vai incluir `cp .env.example .env`. |
 | 4.28 | `.gitattributes` com `* text=auto eol=lf` (adicionado no commit inicial) | Nesta máquina o Git usa `core.autocrlf=true`, que converteria os arquivos para CRLF no checkout. Makefile, Dockerfiles e comandos de shell executados dentro de containers Linux quebram com CRLF. Fixar LF deixa o repositório igual em Windows, Linux e CI. |
+
+---
+
+## Commit inicial
+
+Feito a pedido do dono do repositório depois da aprovação da Fase 4: commit `ffb3074` na branch
+`main`, com as Fases 1 a 4 e uma mensagem descrevendo cada fase. O `.env` e o `.venv` ficaram de
+fora (`.gitignore`), e verifiquei que nenhum arquivo de credencial entrou.
+
+---
+
+## Fase 5 — Demo e docs
+
+### Mudanças
+
+| # | O quê | Por quê |
+|---|---|---|
+| 5.1 | `scripts/seed.py` cria o "Demo Open" (8 times com nomes temáticos) **pela API** e imprime o id, o link do bracket, o link direto da UI do emulador e o comando do simulador | É o pedido do SPEC 13. Imprimir o próximo comando pronto para copiar reduz o atrito do "Run it in 5 minutes". |
+| 5.2 | `scripts/simulate.py` joga rodada por rodada; as partidas da mesma rodada jogam em paralelo (`asyncio.gather`); `--speed` = pontos por segundo por partida | É o SPEC 13. O bracket é relido a cada rodada, porque os vencedores da anterior só estão definidos depois dela. |
+| 5.3 | Em `409 version_conflict`, o simulador usa a `details.current_version` do erro e tenta de novo, sem buscar o bracket inteiro | O SPEC diz "rebusca e tenta de novo". A `current_version` que a API devolve é exatamente o que precisa ser rebuscado, e não existe `GET /matches/{id}` (criar um seria funcionalidade fora do escopo). |
+| 5.4 | O simulador manda `Idempotency-Key` em todo POST e repete falhas de rede **com a mesma chave** (backoff exponencial, 5 tentativas) | Demonstra o uso correto da idempotência: um timeout após o commit não aplica o ponto duas vezes. |
+| 5.5 | O simulador retoma um torneio pela metade: partidas `live` continuam, as `finished` são puladas | Se a demo for interrompida (Ctrl+C), basta rodar de novo. Isso foi testado de verdade nesta fase. |
+| 5.6 | Pequena vantagem para o melhor seed (probabilidade de ponto entre 35% e 65%) | Os resultados ficam plausíveis (favoritos costumam avançar) sem eliminar as zebras. |
+| 5.7 | Log compacto: uma linha por início de partida, fim de game e resultado final, com tempo decorrido. `--verbose` mostra cada ponto | O SPEC pede um "log compacto". Com 4 partidas a 5 pontos/s, logar cada ponto daria 20 linhas por segundo. |
+| 5.8 | Os scripts também passam no `mypy --strict`, e o `make lint` agora os verifica | O SPEC exige strict só em `app/`, mas os scripts são código de demo que recrutadores vão ler. Custou uma linha no Makefile. |
+| 5.9 | **`migrations/env.py` lê o `DATABASE_URL` direto do ambiente antes de carregar as `Settings`** | Bug encontrado ao escrever o DEPLOY.md. A imagem roda com `ENV=prod`, e carregar as `Settings` em prod exige `API_KEY` e `INTERNAL_TOKEN`. O Cloud Run Job de migration falharia sem segredos de que não precisa. Testado com a imagem de produção contra um banco novo. |
+| 5.10 | README com as 10 seções do SPEC 17, em inglês, tom de decisão de engenharia. O placeholder do GIF fica no topo | Conteúdo obrigatório do SPEC. O GIF será gravado pelo dono do repositório (Fase 6). |
+| 5.11 | "Run it in 5 minutes" testado do zero: `docker compose down -v` → up → migrate → run + relay → seed → simulate | É o aceite da Fase 5. Resultado: torneio `finished`, as 7 partidas `finished` no Firestore com as versões iguais às do Postgres, 302 eventos no outbox e 0 pendentes. O `make up` levou 7s com a imagem já construída; o primeiro build do emulador leva alguns minutos, e o README avisa isso. |
+| 5.12 | `docs/SCALING.md` com a **fórmula de custo escrita** (`R = V × ((1 + M) + M × U + T)`), as hipóteses (`U ≈ 50` pontos por partida) e uma tabela de cenários com faixa de preço | O SPEC pede a fórmula, não só o número, e a ressalva de que o preço varia por região. Usei uma faixa ($0.03–$0.06 por 100k leituras) em vez de um valor exato. |
+| 5.13 | A principal alavanca de escala descrita é um **documento de resumo** atualizado só em mudanças estruturais (~5 por partida), com listeners por partida apenas nas partidas que o usuário está vendo | É a sugestão do SPEC, detalhada com a conta: 2–3× menos leituras para 8 times, e mais para chaveamentos maiores. O agrupamento em janelas de 1–2s aparece como segunda alavanca, porque no jogo real um ponto leva mais de 10s. |
+| 5.14 | `docs/DEPLOY.md` com comandos `gcloud` passo a passo: Cloud SQL (socket via conector, `?host=/cloudsql/...` para o asyncpg), Firestore Native, service account **sem arquivo de chave**, Secret Manager, Job de migration, deploy, Cloud Scheduler e as rules | É o SPEC 16. Documentei também uma limitação: o token do Scheduler fica visível na configuração do job, e a alternativa mais estrita é o token OIDC. |
+| 5.15 | Cloud Run com `--allow-unauthenticated` | As leituras são públicas, e as escritas são protegidas pela própria API (`X-API-Key`). Exigir IAM no Cloud Run bloquearia o app Flutter e o simulador. |
+| 5.16 | Encerrei os processos locais da API e do relay usados na validação. Postgres e emulador continuam rodando no Docker | Para não deixar processos órfãos na máquina. Os containers ficam no ar porque são o ambiente de dev. |

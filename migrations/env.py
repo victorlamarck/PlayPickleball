@@ -1,6 +1,7 @@
-"""Alembic environment (async). The database URL comes from app settings (DATABASE_URL)."""
+"""Alembic environment (async). The database URL comes from DATABASE_URL (or app settings)."""
 
 import asyncio
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -21,7 +22,13 @@ target_metadata = Base.metadata
 
 
 def database_url() -> str:
-    return config.get_main_option("sqlalchemy.url") or get_settings().database_url
+    # Read DATABASE_URL directly first: the migration job only needs the database, and loading the
+    # full Settings in prod would also require API_KEY/INTERNAL_TOKEN.
+    return (
+        config.get_main_option("sqlalchemy.url")
+        or os.environ.get("DATABASE_URL")
+        or get_settings().database_url
+    )
 
 
 def run_migrations_offline() -> None:
