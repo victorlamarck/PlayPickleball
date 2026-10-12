@@ -5,8 +5,9 @@
 Live scores for a pickleball tournament bracket, delivered in under a second to hundreds of
 concurrent spectators. The backend is Python on Cloud Run; the reads come from Firestore.
 
-<!-- Demo GIF: Flutter viewer updating live while the simulator runs (to be recorded). -->
-> _Demo GIF placeholder: the Flutter viewer updating live while `make simulate` runs._
+<!-- TODO: record the Flutter viewer updating live while `make simulate` runs, save it as
+     docs/demo.gif and replace the line below with: ![Live viewer demo](docs/demo.gif) -->
+> _Demo GIF coming soon: the Flutter viewer updating live while `make simulate` runs._
 
 ## Architecture
 
@@ -109,6 +110,18 @@ while the simulator runs.
 `make simulate` plays each round in parallel, sends points with `expected_version` and retries
 on `409`, and can resume a half-played tournament. Add `--verbose` to log every point.
 
+### Flutter viewer
+
+[client_flutter/](client_flutter/) is a minimal Material 3 spectator app. It uses `StreamBuilder`
+over Firestore `snapshots()`, with no login and no state management library. Each match card
+flashes when its score changes. With the steps above running:
+
+```bash
+make viewer    # flutter run -d chrome, connected to the local emulator
+```
+
+See [client_flutter/README.md](client_flutter/README.md) for Android, iOS and physical devices.
+
 ## API overview
 
 Interactive docs: <http://localhost:8000/docs>. Write endpoints need `X-API-Key`; POSTs accept an
@@ -167,6 +180,9 @@ make lint              # ruff check, ruff format --check, mypy --strict
 - Firestore security rules, loaded into the emulator and exercised as an anonymous client.
 
 The domain package has 100% line coverage.
+
+Flutter viewer: `cd client_flutter && flutter analyze && flutter test` (model parsing, round
+names, match card rendering and the change highlight).
 
 ## Simplifications / out of scope
 

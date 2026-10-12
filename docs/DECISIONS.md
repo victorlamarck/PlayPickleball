@@ -175,3 +175,33 @@ fora (`.gitignore`), e verifiquei que nenhum arquivo de credencial entrou.
 | 5.14 | `docs/DEPLOY.md` com comandos `gcloud` passo a passo: Cloud SQL (socket via conector, `?host=/cloudsql/...` para o asyncpg), Firestore Native, service account **sem arquivo de chave**, Secret Manager, Job de migration, deploy, Cloud Scheduler e as rules | É o SPEC 16. Documentei também uma limitação: o token do Scheduler fica visível na configuração do job, e a alternativa mais estrita é o token OIDC. |
 | 5.15 | Cloud Run com `--allow-unauthenticated` | As leituras são públicas, e as escritas são protegidas pela própria API (`X-API-Key`). Exigir IAM no Cloud Run bloquearia o app Flutter e o simulador. |
 | 5.16 | Encerrei os processos locais da API e do relay usados na validação. Postgres e emulador continuam rodando no Docker | Para não deixar processos órfãos na máquina. Os containers ficam no ar porque são o ambiente de dev. |
+
+---
+
+## Commit da Fase 5
+
+Commit `0024ae2`, a pedido do dono do repositório, antes de começar a Fase 6.
+
+---
+
+## Fase 6 — Visualizador Flutter
+
+### Mudanças
+
+| # | O quê | Por quê |
+|---|---|---|
+| 6.1 | `client_flutter/` criado com `flutter create` (Flutter 3.47.3 / Dart 3.13), para Android, iOS e **web** | A web permite ver o app no Chrome sem emulador Android/iOS: é o caminho mais rápido para a demo e para gravar o GIF. Desktop ficou de fora porque o suporte do `cloud_firestore` a desktop é limitado. |
+| 6.2 | Dependências só `firebase_core` e `cloud_firestore`, sem gerenciamento de estado | O SPEC pede "`StreamBuilder` basta". O app não tem estado próprio: tudo vem dos snapshots. |
+| 6.3 | `FirebaseOptions` fictícias em `lib/config.dart` em vez de `flutterfire configure` | O emulador ignora credenciais. Gerar `firebase_options.dart` exigiria um projeto Firebase real e colocaria ids no repositório. O README do app explica como trocar para um projeto real. |
+| 6.4 | Configuração via `--dart-define` (`FIRESTORE_EMULATOR_HOST`, `FIRESTORE_EMULATOR_PORT`, `FIREBASE_PROJECT_ID`, `USE_FIRESTORE_EMULATOR`). Host padrão `10.0.2.2` no Android e `localhost` no resto | O emulador Android acessa o host por `10.0.2.2`. Um dispositivo físico precisa do IP da máquina na rede. Os defaults fazem o caso comum funcionar sem nenhum parâmetro. |
+| 6.5 | Tela inicial lista os torneios (`tournaments` ordenados por `updatedAt`), e o toque abre o chaveamento | O SPEC não diz como o app descobre o torneio. A lista evita digitar ou colar o id e funciona com qualquer `make seed`. |
+| 6.6 | Chaveamento com **dois listeners**: o documento do torneio (nome e status) e a subcoleção `matches` | É exatamente o modelo de leitura desenhado no backend: um documento por partida. |
+| 6.7 | Layout responsivo: em telas largas (≥ 720px), uma coluna por rodada lado a lado; em celular, uma aba por rodada | Colunas lado a lado parecem um chaveamento de verdade no desktop/web, mas ficariam ilegíveis no celular. |
+| 6.8 | **Destaque ao mudar o placar:** o card pisca (cor `tertiaryContainer` → normal em 900ms) quando chega uma versão **maior** com games ou status diferentes. Os números trocam com `AnimatedSwitcher` (escala) | É o pedido do SPEC ("destaque visual rápido"). Comparar a `version` evita piscar quando um snapshot repetido chega (ex.: reconexão), e há teste para isso. |
+| 6.9 | O game em andamento aparece em negrito na cor primária; o vencedor em negrito; o perdedor e o "TBD" em cinza | Dá para ler a partida de relance, sem legenda. |
+| 6.10 | Parsing dos documentos em `lib/models.dart`, puro e tolerante (números aceitos como `int` ou `double`, campos ausentes com default) | É testável sem Firebase. A tolerância evita crash se um documento vier incompleto ou com números serializados como `double` (acontece na web). |
+| 6.11 | 11 testes: parsing, nomes das rodadas, agrupamento, renderização do card e o destaque (pisca numa versão nova, não pisca numa repetida). O `widget_test.dart` padrão foi removido | Cobre a lógica e o comportamento visual pedido sem precisar de Firestore, nem real nem fake. |
+| 6.12 | Android: `usesCleartextTraffic="true"` **só no manifest de debug**, e a permissão `INTERNET` adicionada ao manifest principal | O emulador do Firestore usa HTTP sem TLS, e o Android bloqueia tráfego em texto puro por padrão. Liberar só no debug não afeta builds de release. Sem `INTERNET` no manifest principal, um build de release nem conseguiria acessar o Firestore real. |
+| 6.13 | Compilação validada com `flutter build web` e `flutter build apk --debug`, **sem rodar nenhum emulador** | A pedido do dono do repositório, o emulador não foi iniciado. Os dois builds passaram e garantem que o código compila nas plataformas alvo. O build Android mostra avisos de depreciação (Kotlin/Gradle e operações *unchecked*) vindos do plugin `cloud_firestore` 6.10, não do nosso código. Eles somem quando o plugin for atualizado. O app **ainda não foi executado** contra o emulador do Firestore. |
+| 6.14 | `make viewer` (`flutter run -d chrome`) e um job `flutter-viewer` na CI (format, analyze, test) | Um comando para a demo e a garantia de que o app não quebra em PRs. O job é separado para não deixar o pipeline do backend mais lento. |
+| 6.15 | O placeholder do GIF no README virou um comentário com o caminho esperado (`docs/demo.gif`) | Um link de imagem quebrado no README ficaria feio para recrutadores. O comentário diz exatamente o que fazer depois de gravar. |

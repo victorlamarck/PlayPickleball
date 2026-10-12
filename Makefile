@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help up down migrate run relay seed simulate test lint fmt
+.PHONY: help up down migrate run relay seed simulate viewer test lint fmt
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -24,6 +24,9 @@ seed: ## Create the demo tournament
 
 simulate: ## Play the demo tournament (pass ARGS="--tournament <id> --speed 5")
 	uv run python scripts/simulate.py $(ARGS)
+
+viewer: ## Run the Flutter viewer in Chrome against the local emulator
+	cd client_flutter && flutter run -d chrome
 
 test: ## Run the test suite
 	uv run pytest
