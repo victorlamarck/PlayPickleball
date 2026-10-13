@@ -1,6 +1,6 @@
 # Pickleball Live Scores API
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/victorlamarck/PlayPickleball/actions/workflows/ci.yml/badge.svg)](https://github.com/victorlamarck/PlayPickleball/actions/workflows/ci.yml)
 
 Live scores for a pickleball tournament bracket, delivered in under a second to hundreds of
 concurrent spectators. The backend is Python on Cloud Run; the reads come from Firestore.

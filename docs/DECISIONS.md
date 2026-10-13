@@ -205,3 +205,13 @@ Commit `0024ae2`, a pedido do dono do repositório, antes de começar a Fase 6.
 | 6.13 | Compilação validada com `flutter build web` e `flutter build apk --debug`, **sem rodar nenhum emulador** | A pedido do dono do repositório, o emulador não foi iniciado. Os dois builds passaram e garantem que o código compila nas plataformas alvo. O build Android mostra avisos de depreciação (Kotlin/Gradle e operações *unchecked*) vindos do plugin `cloud_firestore` 6.10, não do nosso código. Eles somem quando o plugin for atualizado. O app **ainda não foi executado** contra o emulador do Firestore. |
 | 6.14 | `make viewer` (`flutter run -d chrome`) e um job `flutter-viewer` na CI (format, analyze, test) | Um comando para a demo e a garantia de que o app não quebra em PRs. O job é separado para não deixar o pipeline do backend mais lento. |
 | 6.15 | O placeholder do GIF no README virou um comentário com o caminho esperado (`docs/demo.gif`) | Um link de imagem quebrado no README ficaria feio para recrutadores. O comentário diz exatamente o que fazer depois de gravar. |
+
+---
+
+## Publicação no GitHub
+
+| # | O quê | Por quê |
+|---|---|---|
+| 7.1 | O repositório `victorlamarck/PlayPickleball` foi criado com um commit inicial (`README.md` de uma linha). O dono do repositório fez o merge com `--allow-unrelated-histories` (commit `ede4e31`), mantendo o README completo, e o push | Junta os dois históricos sem `push --force`. Os commits das fases são preservados. |
+| 7.2 | Badge de CI apontando para `victorlamarck/PlayPickleball` | Substitui o placeholder `OWNER/REPO` agora que o repositório existe. |
+
