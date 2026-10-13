@@ -5,9 +5,11 @@
 Live scores for a pickleball tournament bracket, delivered in under a second to hundreds of
 concurrent spectators. The backend is Python on Cloud Run; the reads come from Firestore.
 
-<!-- TODO: record the Flutter viewer updating live while `make simulate` runs, save it as
-     docs/demo.gif and replace the line below with: ![Live viewer demo](docs/demo.gif) -->
-> _Demo GIF coming soon: the Flutter viewer updating live while `make simulate` runs._
+![Flutter viewer: an 8-team bracket updating live while the simulator scores points](docs/demo.gif)
+
+_The Flutter viewer (web build) listening to Firestore while `make simulate` scores points
+through the API. Each card flashes on a new version, and winners move into the next round.
+Shown at 2x speed._
 
 ## Architecture
 
